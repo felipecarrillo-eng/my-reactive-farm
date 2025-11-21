@@ -35,7 +35,7 @@ export default function AnimalForm({ onSubmit, submitError }) {
     try {
       await onSubmit(form);
 
-      // ⭐ Mejora 2: limpiar el formulario después de enviar
+      //  Mejora 2: limpiar el formulario después de enviar
       setForm({
         name: "",
         type: "",
