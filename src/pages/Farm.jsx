@@ -20,6 +20,9 @@ export default function Farm() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [query, setQuery] = useState("");
 
+  // ⭐ Nuevo estado para ACTIVIDAD 2
+  const [minAge, setMinAge] = useState(0);
+
   // Error de envío desde el formulario (red / servidor)
   const [submitError, setSubmitError] = useState(null);
 
@@ -49,18 +52,18 @@ export default function Farm() {
     try {
       setSubmitError(null);
       const created = await createAnimal(animal);
-      // Optimistic update (prepend)
       setAnimals((prev) => [created, ...prev]);
       return created;
     } catch (err) {
       setSubmitError("Could not create the animal. Try again.");
-      throw err; // mantiene el flujo del formulario
+      throw err;
     }
   }
 
-  // Derivar lista filtrada + búsqueda
+  // ⭐ Lógica de filtrado con el nuevo filtro de edad
   const filteredAnimals = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     return animals.filter((a) => {
       const byType = typeFilter === "all" || a.type === typeFilter;
       const byStatus = statusFilter === "all" || a.status === statusFilter;
@@ -70,20 +73,21 @@ export default function Farm() {
         a.type?.toLowerCase().includes(q) ||
         String(a.weight).includes(q) ||
         String(a.age).includes(q);
-      return byType && byStatus && byQuery;
+
+      // ⭐ Nuevo filtro: edad mínima
+      const byMinAge = a.age >= Number(minAge);
+
+      return byType && byStatus && byQuery && byMinAge;
     });
-  }, [animals, typeFilter, statusFilter, query]);
+  }, [animals, typeFilter, statusFilter, query, minAge]);
 
   return (
     <Layout title="My Reactive Farm 🐄🌾">
-      {/* Loading / Error de carga */}
       {loading && <Loader message="Fetching animals from the farm…" />}
       {loadError && <Alert variant="error">{loadError}</Alert>}
 
-      {/* Contenido principal */}
       {!loading && !loadError && (
         <div className="space-y-8">
-          {/* Formulario controlado para crear animales */}
           <section aria-labelledby="create-animal">
             <h2 id="create-animal" className="mb-3 text-xl font-semibold">
               Add new animal
@@ -91,37 +95,30 @@ export default function Farm() {
             <AnimalForm onSubmit={handleCreate} submitError={submitError} />
           </section>
 
-          {/* Filtros y lista */}
           <section aria-labelledby="animals-list">
             <h2 id="animals-list" className="sr-only">
               Animals
             </h2>
 
             <AnimalList animals={filteredAnimals}>
-              {/* Controls (composición) */}
               <div className="flex flex-wrap items-center gap-3">
+
                 {/* Search */}
-                <label className="sr-only" htmlFor="search">
-                  Search
-                </label>
                 <input
                   id="search"
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by name, type, age, weight…"
-                  className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100"
+                  className="w-64 rounded-md border px-3 py-2 text-sm"
                 />
 
                 {/* Type filter */}
-                <label className="sr-only" htmlFor="type-filter">
-                  Type
-                </label>
                 <select
                   id="type-filter"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100"
+                  className="rounded-md border px-3 py-2 text-sm"
                 >
                   {TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -131,14 +128,11 @@ export default function Farm() {
                 </select>
 
                 {/* Status filter */}
-                <label className="sr-only" htmlFor="status-filter">
-                  Status
-                </label>
                 <select
                   id="status-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100"
+                  className="rounded-md border px-3 py-2 text-sm"
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -146,6 +140,16 @@ export default function Farm() {
                     </option>
                   ))}
                 </select>
+
+                {/*  NUEVO - Filtro por edad mínima */}
+                <input
+                  type="number"
+                  min="0"
+                  value={minAge}
+                  onChange={(e) => setMinAge(e.target.value)}
+                  placeholder="Min age"
+                  className="w-32 rounded-md border px-3 py-2 text-sm"
+                />
               </div>
             </AnimalList>
           </section>
